@@ -168,22 +168,23 @@ public class EnhancedRippleViewController : UIViewController
     #endregion
 
 
-    #region Ripple Effect Logic
+    #region Ripple Effect Logic Optimized
     private void ApplyInitialRippleAtPoint(CGPoint location, float pressure)
     {
-        float dynamicDamping = Math.Clamp(DampingFactor, 0.8f, 0.99f);
-        ApplyRippleAtPoint(location, pressure, dynamicDamping);
+        // Direct application of damping within recommended range
+        ApplyRippleAtPoint(location, pressure, Math.Clamp(DampingFactor, 0.8f, 0.99f));
         _isTouchOccurred = true;
     }
 
     private void InterpolateRipples(CGPoint start, CGPoint end, float pressure)
     {
+        // Use of dynamic damping for consistency in ripple effect
         float dynamicDamping = Math.Clamp(DampingFactor, 0.8f, 0.99f);
         int steps = (int)Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
 
         for (int i = 0; i <= steps; i++)
         {
-            float t = (float)i / steps;
+            float t = i / (float)steps;
             CGPoint interpolatedPoint = new CGPoint(
                 start.X + t * (end.X - start.X),
                 start.Y + t * (end.Y - start.Y)
@@ -194,8 +195,7 @@ public class EnhancedRippleViewController : UIViewController
 
     private void ApplyRippleAtPoint(CGPoint point, float pressure, float damping)
     {
-        int mapX = (int)(point.X * (_rippleMap.GetLength(0) / View.Bounds.Width));
-        int mapY = (int)(point.Y * (_rippleMap.GetLength(1) / View.Bounds.Height));
+        var (mapX, mapY) = GetMapCoordinates(point);
         ApplyRipple(mapX, mapY, pressure, damping);
     }
 
@@ -204,24 +204,15 @@ public class EnhancedRippleViewController : UIViewController
         lock (_lockObj)
         {
             int impactRadius = (int)Math.Ceiling(3 * pressure);
-            damping = Math.Clamp(damping, 0.8f, 1.3f);
-
             for (int dx = -impactRadius; dx <= impactRadius; dx++)
             {
                 for (int dy = -impactRadius; dy <= impactRadius; dy++)
                 {
-                    int nx = x + dx;
-                    int ny = y + dy;
+                    int nx = x + dx, ny = y + dy;
                     if (nx >= 1 && nx < _mapSize - 1 && ny >= 1 && ny < _mapSize - 1)
                     {
-                        _rippleMap[nx, ny] += InitialPressureFactor * pressure / (Math.Abs(dx) + Math.Abs(dy) + 1);
-                        _rippleMap[nx, ny] *= damping;
-
-                        // Update the affected area bounds
-                        _affectedAreaStartX = Math.Max(Math.Min(_affectedAreaStartX, nx - impactRadius), 1);
-                        _affectedAreaStartY = Math.Max(Math.Min(_affectedAreaStartY, ny - impactRadius), 1);
-                        _affectedAreaEndX = Math.Min(Math.Max(_affectedAreaEndX, nx + impactRadius), _mapSize - 2);
-                        _affectedAreaEndY = Math.Min(Math.Max(_affectedAreaEndY, ny + impactRadius), _mapSize - 2);
+                        _rippleMap[nx, ny] += InitialPressureFactor * pressure / (Math.Abs(dx) + Math.Abs(dy) + 1) * damping;
+                        UpdateAffectedAreaBounds(nx, ny, impactRadius);
                     }
                 }
             }
@@ -236,42 +227,50 @@ public class EnhancedRippleViewController : UIViewController
         {
             for (int y = 1; y < size - 1; y++)
             {
-                // Calculate the average of neighboring points
                 float newHeight = (
                     _rippleMap[x - 1, y] +
                     _rippleMap[x + 1, y] +
                     _rippleMap[x, y - 1] +
                     _rippleMap[x, y + 1]) / 2.0f - _lastRippleMap[x, y];
 
-                // Damping
-                newHeight *= DampingFactor;
-
-                _lastRippleMap[x, y] = newHeight;
+                _lastRippleMap[x, y] = newHeight * DampingFactor;
             }
         }
 
-        // Swap the ripple maps
         SwapRippleMaps();
     }
 
-
-
     private void SwapRippleMaps()
     {
-        _tempMap = _rippleMap;
+        var temp = _rippleMap;
         _rippleMap = _lastRippleMap;
-        _lastRippleMap = _tempMap;
+        _lastRippleMap = temp;
     }
-
 
     private void ResetAffectedArea()
     {
-        _affectedAreaStartX = 0;
-        _affectedAreaStartY = 0;
-        _affectedAreaEndX = _mapSize;
-        _affectedAreaEndY = _mapSize;
+        _affectedAreaStartX = _affectedAreaStartY = 0;
+        _affectedAreaEndX = _affectedAreaEndY = _mapSize;
+    }
+
+    // Helper Methods
+    private (int mapX, int mapY) GetMapCoordinates(CGPoint point)
+    {
+        return (
+            (int)(point.X * (_rippleMap.GetLength(0) / View.Bounds.Width)),
+            (int)(point.Y * (_rippleMap.GetLength(1) / View.Bounds.Height))
+        );
+    }
+
+    private void UpdateAffectedAreaBounds(int x, int y, int radius)
+    {
+        _affectedAreaStartX = Math.Min(_affectedAreaStartX, x - radius);
+        _affectedAreaStartY = Math.Min(_affectedAreaStartY, y - radius);
+        _affectedAreaEndX = Math.Max(_affectedAreaEndX, x + radius);
+        _affectedAreaEndY = Math.Max(_affectedAreaEndY, y + radius);
     }
     #endregion
+
 
 
 
