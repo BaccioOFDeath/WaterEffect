@@ -20,7 +20,7 @@ public class EnhancedRippleViewController : UIViewController
     private SKCanvasView _canvasView;
     private SKBitmap _bitmap;
     private float[,] _rippleMap, _lastRippleMap, _tempMap;
-    private readonly int _mapSize = 225;
+    private readonly int _mapSize = 325;
     private NSTimer _timer;
     private readonly object _lockObj = new object();
     private int _affectedAreaStartX = 0, _affectedAreaStartY = 0, _affectedAreaEndX, _affectedAreaEndY;
@@ -114,37 +114,30 @@ public class EnhancedRippleViewController : UIViewController
 
 
 
-    #region Touch Event Handling
+    #region Touch Event Handling Optimized
     public override void TouchesBegan(NSSet touches, UIEvent evt)
     {
         base.TouchesBegan(touches, evt);
-        HandleTouches(touches, touchBegan: true);
+        HandleTouches(touches, true);
     }
 
     public override void TouchesMoved(NSSet touches, UIEvent evt)
     {
         base.TouchesMoved(touches, evt);
-        HandleTouches(touches, touchBegan: false);
+        HandleTouches(touches, false);
     }
 
-    public override void TouchesEnded(NSSet touches, UIEvent evt)
-    {
-        base.TouchesEnded(touches, evt);
-        RemoveTouchPoints(touches);
-    }
-
-    public override void TouchesCancelled(NSSet touches, UIEvent evt)
-    {
-        base.TouchesCancelled(touches, evt);
-        RemoveTouchPoints(touches);
-    }
+    public override void TouchesEnded(NSSet touches, UIEvent evt) => RemoveTouchPoints(touches);
+    public override void TouchesCancelled(NSSet touches, UIEvent evt) => RemoveTouchPoints(touches);
 
     private void HandleTouches(NSSet touches, bool touchBegan)
     {
-        foreach (UITouch touch in touches)
+        var uiTouches = touches.ToArray<UITouch>();
+        foreach (var touch in uiTouches)
         {
-            CGPoint location = touch.LocationInView(View);
-            float pressure = (float)(touch.MaximumPossibleForce == 0 ? 1 : (float)touch.Force / touch.MaximumPossibleForce);
+            var location = touch.LocationInView(View);
+            // Explicitly cast nfloat to float for the pressure calculation
+            float pressure = touch.MaximumPossibleForce == 0 ? 1.0f : (float)(touch.Force / touch.MaximumPossibleForce);
             pressure = Math.Clamp(pressure, 0.1f, 1.0f);
 
             if (touchBegan)
@@ -153,23 +146,27 @@ public class EnhancedRippleViewController : UIViewController
             }
             else
             {
-                if (_lastTouchPoints.TryGetValue(touch, out CGPoint lastPoint))
+                if (_lastTouchPoints.TryGetValue(touch, out var lastPoint))
                 {
                     InterpolateRipples(lastPoint, location, pressure);
                 }
             }
 
-            _lastTouchPoints[touch] = location;
+            // Store the last touch point, casting CGPoint's double values to float if necessary
+            _lastTouchPoints[touch] = new CGPoint((float)location.X, (float)location.Y);
         }
     }
 
-
     private void RemoveTouchPoints(NSSet touches)
     {
-        foreach (UITouch touch in touches)
+        var uiTouches = touches.ToArray<UITouch>();
+        foreach (var touch in uiTouches)
+        {
             _lastTouchPoints.Remove(touch);
+        }
     }
     #endregion
+
 
     #region Ripple Effect Logic
     private void ApplyInitialRippleAtPoint(CGPoint location, float pressure)
