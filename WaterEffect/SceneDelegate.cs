@@ -12,14 +12,42 @@ namespace WaterEffect
 		public UIWindow Window { get; set; }
 
 		[Export ("scene:willConnectToSession:options:")]
-		public void WillConnect (UIScene scene, UISceneSession session, UISceneConnectionOptions connectionOptions)
-		{
-			// Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-			// If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-			// This delegate does not imply the connecting scene or session are new (see UIApplicationDelegate `GetConfiguration` instead).
-		}
+        /*public void WillConnect(UIScene scene, UISceneSession session, UISceneConnectionOptions connectionOptions)
+        {
+            // Create a new window for the given scene.
+            var windowScene = scene as UIWindowScene;
+            if (windowScene != null)
+            {
+                Window = new UIWindow(windowScene);
 
-		[Export ("sceneDidDisconnect:")]
+                // Set the root view controller to your OpenGLWaterEffectViewController
+                Window.RootViewController = new OpenGLWaterEffectViewController();
+
+                // Make the window visible.
+                Window.MakeKeyAndVisible();
+            }
+        }*/
+
+        
+		 public void WillConnect(UIScene scene, UISceneSession session, UISceneConnectionOptions connectionOptions)
+        {
+            if (scene is UIWindowScene windowScene)
+            {
+                // Create a new instance of your custom view controller
+                var enhancedRippleViewController = new EnhancedRippleViewController();
+
+                // Create a new UIWindow using the UIWindowScene and set the custom view controller as root
+                Window = new UIWindow(windowScene);
+                Window.RootViewController = enhancedRippleViewController;
+
+                // Make the window visible
+                Window.MakeKeyAndVisible();
+            }
+        }
+		
+
+
+        [Export ("sceneDidDisconnect:")]
 		public void DidDisconnect (UIScene scene)
 		{
 			// Called as the scene is being released by the system.
