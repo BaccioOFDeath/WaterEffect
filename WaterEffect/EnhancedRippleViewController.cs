@@ -5,6 +5,7 @@ using SkiaSharp.Views.iOS;
 using System;
 using UIKit;
 using System.Collections.Generic;
+using CoreAnimation;
 
 public class EnhancedRippleViewController : UIViewController
 {
@@ -22,6 +23,7 @@ public class EnhancedRippleViewController : UIViewController
     private float[,] _rippleMap, _lastRippleMap;
     private readonly int _mapSize = 325;
     private NSTimer _timer;
+    private CADisplayLink _displayLink;
     private readonly object _lockObj = new object();
     private int _affectedAreaStartX = 0, _affectedAreaStartY = 0, _affectedAreaEndX, _affectedAreaEndY;
     private bool _isTouchOccurred = false;
@@ -64,6 +66,8 @@ public class EnhancedRippleViewController : UIViewController
         {
             _timer?.Invalidate();
             _timer?.Dispose();
+            _displayLink?.Invalidate();
+            _displayLink?.Dispose();
             _paint?.Dispose();
             _gradientPaint?.Dispose();
             _canvasView?.RemoveFromSuperview();
@@ -86,6 +90,9 @@ public class EnhancedRippleViewController : UIViewController
         View.AddSubview(_canvasView);
 
         _timer = NSTimer.CreateRepeatingScheduledTimer(TimeSpan.FromMilliseconds(16), TimerElapsed);
+
+        _displayLink = CADisplayLink.Create(OnDisplayLink);
+        _displayLink.AddToRunLoop(NSRunLoop.Main, NSRunLoopMode.Common);
 
         _gradientPaint.Shader = SKShader.CreateLinearGradient(
             new SKPoint(0, 0), new SKPoint(_mapSize, _mapSize),
@@ -272,6 +279,17 @@ public class EnhancedRippleViewController : UIViewController
         }
         UpdateRippleEffect();
         BeginInvokeOnMainThread(() => _canvasView.SetNeedsDisplay());
+    }
+
+    private void OnDisplayLink()
+    {
+        if (_isTouchOccurred)
+        {
+            ResetAffectedArea();
+            _isTouchOccurred = false;
+        }
+        UpdateRippleEffect();
+        _canvasView.SetNeedsDisplay();
     }
 
     private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
