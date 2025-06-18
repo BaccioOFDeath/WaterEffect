@@ -12,7 +12,6 @@ public class OpenGLWaterEffectViewController : GLKViewController
     private EAGLContext context;
     private int program;
     private int positionAttribLocation;
-    private int timeUniformLocation;
     private int rippleCenterUniformLocation;
     private float totalTime = 0.0f;
     private const int MaxTouches = 10; // Limit the number of simultaneous touches
@@ -73,7 +72,9 @@ public class OpenGLWaterEffectViewController : GLKViewController
         GL.LinkProgram(program);
 
         positionAttribLocation = GL.GetAttribLocation(program, "position");
-        timeUniformLocation = GL.GetUniformLocation(program, "time");
+        // The shaders currently do not define a 'time' uniform. When adding
+        // time-based effects, retrieve the location here:
+        // timeUniformLocation = GL.GetUniformLocation(program, "time");
         rippleCenterUniformLocation = GL.GetUniformLocation(program, "rippleCenter");
 
         GL.UseProgram(program);
@@ -99,8 +100,10 @@ public class OpenGLWaterEffectViewController : GLKViewController
 
     private void UpdateRippleEffect(float deltaTime)
     {
+        // Accumulate elapsed time for future effects. The current shaders do
+        // not include a 'time' uniform, so nothing is passed to the GPU.
         totalTime += deltaTime;
-        GL.Uniform1(timeUniformLocation, totalTime);
+        // GL.Uniform1(timeUniformLocation, totalTime);
     }
 
     private void UpdateRippleCenter(CGPoint newCenter)
