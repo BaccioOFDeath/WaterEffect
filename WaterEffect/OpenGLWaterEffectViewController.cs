@@ -151,7 +151,8 @@ public class OpenGLWaterEffectViewController : GLKViewController
             var location = touch.LocationInView(View);
             CGPoint normalizedLocation = NormalizeTouchLocation(location);
             Console.WriteLine($"Normalized Touch Began at: {normalizedLocation.X}, {normalizedLocation.Y}");
-            touchPoints[touch.GetHashCode() % MaxTouches] = normalizedLocation;
+            // GetHashCode can be negative, so use Math.Abs to keep the index within array bounds
+            touchPoints[Math.Abs(touch.GetHashCode()) % MaxTouches] = normalizedLocation;
         }
     }
 
@@ -169,7 +170,8 @@ public class OpenGLWaterEffectViewController : GLKViewController
 
         foreach (var touch in touches.Cast<UITouch>())
         {
-            touchPoints[touch.GetHashCode() % MaxTouches] = CGPoint.Empty;
+            // GetHashCode can be negative, so use Math.Abs to keep the index within array bounds
+            touchPoints[Math.Abs(touch.GetHashCode()) % MaxTouches] = CGPoint.Empty;
         }
     }
 
