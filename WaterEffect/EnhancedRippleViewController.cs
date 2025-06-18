@@ -18,8 +18,7 @@ public class EnhancedRippleViewController : UIViewController
     private SKPaint _paint = new SKPaint();
     private SKPaint _gradientPaint = new SKPaint();
     private SKCanvasView _canvasView;
-    private SKBitmap _bitmap;
-    private float[,] _rippleMap, _lastRippleMap, _tempMap;
+    private float[,] _rippleMap, _lastRippleMap;
     private readonly int _mapSize = 325;
     private NSTimer _timer;
     private readonly object _lockObj = new object();
@@ -41,7 +40,6 @@ public class EnhancedRippleViewController : UIViewController
     {
         base.ViewDidLoad();
         InitializeViewComponents();
-        InitializeRippleData();
         View.BackgroundColor = UIColor.Black; // Set a dark background color
         SetNeedsStatusBarAppearanceUpdate();
     }
@@ -69,7 +67,6 @@ public class EnhancedRippleViewController : UIViewController
             _gradientPaint?.Dispose();
             _canvasView?.RemoveFromSuperview();
             _canvasView?.Dispose();
-            _bitmap?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -95,17 +92,6 @@ public class EnhancedRippleViewController : UIViewController
             null,
             SKShaderTileMode.Clamp);
 
-        int width = (int)(View.Bounds.Width * UIScreen.MainScreen.Scale);
-        int height = (int)(View.Bounds.Height * UIScreen.MainScreen.Scale);
-        _bitmap = new SKBitmap(width, height);
-
-        _rippleMap = new float[width, height];
-        _lastRippleMap = new float[width, height];
-        Buffer.BlockCopy(_rippleMap, 0, _lastRippleMap, 0, _rippleMap.Length * sizeof(float));
-    }
-
-    private void InitializeRippleData()
-    {
         _rippleMap = new float[_mapSize, _mapSize];
         _lastRippleMap = new float[_mapSize, _mapSize];
         Buffer.BlockCopy(_rippleMap, 0, _lastRippleMap, 0, _rippleMap.Length * sizeof(float));
