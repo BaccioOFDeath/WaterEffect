@@ -217,9 +217,14 @@ public class EnhancedRippleViewController : UIViewController
     {
         int size = _rippleMap.GetLength(0);
 
-        for (int x = 1; x < size - 1; x++)
+        int startX = Math.Clamp(_affectedAreaStartX, 1, size - 1);
+        int endX = Math.Clamp(_affectedAreaEndX, 1, size - 1);
+        int startY = Math.Clamp(_affectedAreaStartY, 1, size - 1);
+        int endY = Math.Clamp(_affectedAreaEndY, 1, size - 1);
+
+        for (int x = startX; x < endX; x++)
         {
-            for (int y = 1; y < size - 1; y++)
+            for (int y = startY; y < endY; y++)
             {
                 float newHeight = (
                     _rippleMap[x - 1, y] +
@@ -230,6 +235,11 @@ public class EnhancedRippleViewController : UIViewController
                 _lastRippleMap[x, y] = newHeight * DampingFactor;
             }
         }
+
+        _affectedAreaStartX = startX;
+        _affectedAreaEndX = endX;
+        _affectedAreaStartY = startY;
+        _affectedAreaEndY = endY;
 
         SwapRippleMaps();
     }
@@ -245,6 +255,14 @@ public class EnhancedRippleViewController : UIViewController
     {
         _affectedAreaStartX = _affectedAreaStartY = 0;
         _affectedAreaEndX = _affectedAreaEndY = _mapSize;
+    }
+
+    private void ClampAffectedArea()
+    {
+        _affectedAreaStartX = Math.Clamp(_affectedAreaStartX, 0, _mapSize);
+        _affectedAreaEndX = Math.Clamp(_affectedAreaEndX, 0, _mapSize);
+        _affectedAreaStartY = Math.Clamp(_affectedAreaStartY, 0, _mapSize);
+        _affectedAreaEndY = Math.Clamp(_affectedAreaEndY, 0, _mapSize);
     }
 
     // Helper Methods
@@ -272,12 +290,13 @@ public class EnhancedRippleViewController : UIViewController
     #region Timer and Rendering
     private void TimerElapsed(NSTimer obj)
     {
-        if (_isTouchOccurred)
+        UpdateRippleEffect();
+        ClampAffectedArea();
+        if (!_isTouchOccurred)
         {
             ResetAffectedArea();
-            _isTouchOccurred = false;
         }
-        UpdateRippleEffect();
+        _isTouchOccurred = false;
         BeginInvokeOnMainThread(() => _canvasView.SetNeedsDisplay());
     }
 
