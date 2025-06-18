@@ -6,6 +6,7 @@ using System;
 using UIKit;
 using System.Collections.Generic;
 using CoreAnimation;
+using CoreMotion;
 
 public class EnhancedRippleViewController : UIViewController
 {
@@ -27,6 +28,9 @@ public class EnhancedRippleViewController : UIViewController
     private readonly object _lockObj = new object();
     private int _affectedAreaStartX = 0, _affectedAreaStartY = 0, _affectedAreaEndX, _affectedAreaEndY;
     private bool _isTouchOccurred = false;
+    private CMMotionManager _motionManager;
+    private float _tiltX = 0f;
+    private float _tiltY = 0f;
     #endregion
 
     #region Constructor
@@ -68,6 +72,8 @@ public class EnhancedRippleViewController : UIViewController
             _timer?.Dispose();
             _displayLink?.Invalidate();
             _displayLink?.Dispose();
+            _motionManager?.StopDeviceMotionUpdates();
+            _motionManager?.Dispose();
             _paint?.Dispose();
             _gradientPaint?.Dispose();
             _canvasView?.RemoveFromSuperview();
@@ -93,6 +99,20 @@ public class EnhancedRippleViewController : UIViewController
 
         _displayLink = CADisplayLink.Create(OnDisplayLink);
         _displayLink.AddToRunLoop(NSRunLoop.Main, NSRunLoopMode.Common);
+
+        _motionManager = new CMMotionManager();
+        _motionManager.DeviceMotionUpdateInterval = 1.0 / 60.0;
+        if (_motionManager.DeviceMotionAvailable)
+        {
+            _motionManager.StartDeviceMotionUpdates(NSOperationQueue.CurrentQueue, (data, error) =>
+            {
+                if (data != null)
+                {
+                    _tiltX = (float)data.Gravity.X;
+                    _tiltY = (float)data.Gravity.Y;
+                }
+            });
+        }
 
         _gradientPaint.Shader = SKShader.CreateLinearGradient(
             new SKPoint(0, 0), new SKPoint(_mapSize, _mapSize),
@@ -231,6 +251,8 @@ public class EnhancedRippleViewController : UIViewController
                     _rippleMap[x + 1, y] +
                     _rippleMap[x, y - 1] +
                     _rippleMap[x, y + 1]) / 2.0f - _lastRippleMap[x, y];
+
+                newHeight += (_tiltX + _tiltY) * 0.05f;
 
                 _lastRippleMap[x, y] = newHeight * DampingFactor;
             }
