@@ -1,4 +1,4 @@
-﻿using CoreGraphics;
+using CoreGraphics;
 using Foundation;
 using SkiaSharp;
 using SkiaSharp.Views.iOS;
