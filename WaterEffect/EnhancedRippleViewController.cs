@@ -2,6 +2,7 @@ using CoreGraphics;
 using Foundation;
 using SkiaSharp;
 using SkiaSharp.Views.iOS;
+using CoreMotion;
 using System;
 using UIKit;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ public class EnhancedRippleViewController : UIViewController
     private float[,] _rippleMap, _lastRippleMap;
     private readonly int _mapSize = 325;
     private NSTimer _timer;
+    private CMMotionManager _motionManager;
     private readonly object _lockObj = new object();
     private int _affectedAreaStartX = 0, _affectedAreaStartY = 0, _affectedAreaEndX, _affectedAreaEndY;
     private bool _isTouchOccurred = false;
@@ -67,6 +69,8 @@ public class EnhancedRippleViewController : UIViewController
             _gradientPaint?.Dispose();
             _canvasView?.RemoveFromSuperview();
             _canvasView?.Dispose();
+            _motionManager?.StopDeviceMotionUpdates();
+            _motionManager?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -85,6 +89,12 @@ public class EnhancedRippleViewController : UIViewController
         View.AddSubview(_canvasView);
 
         _timer = NSTimer.CreateRepeatingScheduledTimer(TimeSpan.FromMilliseconds(16), TimerElapsed);
+
+        _motionManager = new CMMotionManager
+        {
+            DeviceMotionUpdateInterval = 1.0 / 60.0
+        };
+        _motionManager.StartDeviceMotionUpdates();
 
         _gradientPaint.Shader = SKShader.CreateLinearGradient(
             new SKPoint(0, 0), new SKPoint(_mapSize, _mapSize),
@@ -209,6 +219,9 @@ public class EnhancedRippleViewController : UIViewController
     {
         int size = _rippleMap.GetLength(0);
 
+        double gx = _motionManager?.DeviceMotion?.Gravity.X ?? 0.0;
+        double gy = _motionManager?.DeviceMotion?.Gravity.Y ?? 0.0;
+
         for (int x = 1; x < size - 1; x++)
         {
             for (int y = 1; y < size - 1; y++)
@@ -218,6 +231,9 @@ public class EnhancedRippleViewController : UIViewController
                     _rippleMap[x + 1, y] +
                     _rippleMap[x, y - 1] +
                     _rippleMap[x, y + 1]) / 2.0f - _lastRippleMap[x, y];
+
+                // Bias heights based on device tilt
+                newHeight += (float)((gx * (x - size / 2) + gy * (y - size / 2)) / size);
 
                 _lastRippleMap[x, y] = newHeight * DampingFactor;
             }
