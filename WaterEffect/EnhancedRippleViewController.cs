@@ -11,6 +11,7 @@ public class EnhancedRippleViewController : UIViewController
     #region Constants
     private const float InitialPressureFactor = 0.7f;
     private const float DampingFactor = 0.95f;
+    private const bool EnableDiagnosticLogging = false;
     #endregion
 
     #region Fields
@@ -281,8 +282,11 @@ public class EnhancedRippleViewController : UIViewController
         // Correctly cast nfloat to float
         var scale = (float)UIScreen.MainScreen.Scale;
 
-        Console.WriteLine($"Canvas Info: {info.Width}x{info.Height}");
-        Console.WriteLine($"Device Scale Factor: {scale}");
+        if (EnableDiagnosticLogging)
+        {
+            Console.WriteLine($"Canvas Info: {info.Width}x{info.Height}");
+            Console.WriteLine($"Device Scale Factor: {scale}");
+        }
         canvas.Clear(SKColors.Black);
 
         // Make sure this method is correctly implemented
