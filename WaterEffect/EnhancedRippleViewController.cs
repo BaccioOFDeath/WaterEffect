@@ -22,6 +22,8 @@ public class EnhancedRippleViewController : UIViewController
     private SKPaint _gradientPaint = new SKPaint();
     private SKCanvasView _canvasView;
     private float[,] _rippleMap, _lastRippleMap;
+    private VelocityField _velocities;
+    private SKBitmap _particleBitmap;
     private readonly int _mapSize = 325;
     private NSTimer _timer;
     private CADisplayLink _displayLink;
@@ -76,6 +78,7 @@ public class EnhancedRippleViewController : UIViewController
             _motionManager?.Dispose();
             _paint?.Dispose();
             _gradientPaint?.Dispose();
+            _particleBitmap?.Dispose();
             _canvasView?.RemoveFromSuperview();
             _canvasView?.Dispose();
         }
@@ -123,6 +126,12 @@ public class EnhancedRippleViewController : UIViewController
         _rippleMap = new float[_mapSize, _mapSize];
         _lastRippleMap = new float[_mapSize, _mapSize];
         Buffer.BlockCopy(_rippleMap, 0, _lastRippleMap, 0, _rippleMap.Length * sizeof(float));
+        _velocities = new VelocityField(_mapSize);
+        var particlePath = NSBundle.MainBundle.PathForResource("Particles", "png");
+        if (particlePath != null)
+        {
+            _particleBitmap = SKBitmap.Decode(particlePath);
+        }
     }
     #endregion
 
@@ -226,6 +235,8 @@ public class EnhancedRippleViewController : UIViewController
                     if (nx >= 1 && nx < _mapSize - 1 && ny >= 1 && ny < _mapSize - 1)
                     {
                         _rippleMap[nx, ny] += InitialPressureFactor * pressure / (Math.Abs(dx) + Math.Abs(dy) + 1) * damping;
+                        _velocities.X[nx, ny] += dx * pressure;
+                        _velocities.Y[nx, ny] += dy * pressure;
                         UpdateAffectedAreaBounds(nx, ny, impactRadius);
                     }
                 }
@@ -246,15 +257,19 @@ public class EnhancedRippleViewController : UIViewController
         {
             for (int y = startY; y < endY; y++)
             {
-                float newHeight = (
-                    _rippleMap[x - 1, y] +
-                    _rippleMap[x + 1, y] +
-                    _rippleMap[x, y - 1] +
-                    _rippleMap[x, y + 1]) / 2.0f - _lastRippleMap[x, y];
+                float gradX = _rippleMap[x + 1, y] - _rippleMap[x - 1, y];
+                float gradY = _rippleMap[x, y + 1] - _rippleMap[x, y - 1];
 
+                _velocities.X[x, y] += -gradX * 0.03f;
+                _velocities.Y[x, y] += -gradY * 0.03f;
+
+                _velocities.X[x, y] *= DampingFactor;
+                _velocities.Y[x, y] *= DampingFactor;
+
+                float newHeight = _rippleMap[x, y] + (_velocities.X[x, y] + _velocities.Y[x, y]) * 0.5f;
                 newHeight += (_tiltX + _tiltY) * 0.05f;
 
-                _lastRippleMap[x, y] = newHeight * DampingFactor;
+                _lastRippleMap[x, y] = newHeight;
             }
         }
 
@@ -350,6 +365,7 @@ public class EnhancedRippleViewController : UIViewController
 
         // Make sure this method is correctly implemented
         DrawRippleEffect(canvas);
+        DrawSplashEffect(canvas);
     }
 
     private void DrawRippleEffect(SKCanvas canvas)
@@ -372,6 +388,32 @@ public class EnhancedRippleViewController : UIViewController
                 float rectY = y * rectHeight;
 
                 canvas.DrawRect(new SKRect(rectX, rectY, rectX + rectWidth, rectY + rectHeight), _paint);
+            }
+        }
+    }
+
+    private void DrawSplashEffect(SKCanvas canvas)
+    {
+        if (_particleBitmap == null)
+            return;
+
+        int width = _rippleMap.GetLength(0);
+        int height = _rippleMap.GetLength(1);
+
+        float rectWidth = canvas.LocalClipBounds.Width / width;
+        float rectHeight = canvas.LocalClipBounds.Height / height;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                float speed = Math.Abs(_velocities.X[x, y]) + Math.Abs(_velocities.Y[x, y]);
+                if (speed > 0.5f)
+                {
+                    float rectX = x * rectWidth;
+                    float rectY = y * rectHeight;
+                    canvas.DrawBitmap(_particleBitmap, new SKRect(rectX, rectY, rectX + rectWidth, rectY + rectHeight));
+                }
             }
         }
     }

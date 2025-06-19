@@ -17,3 +17,10 @@ WaterEffect is a simple iOS sample that demonstrates a dynamic water ripple effe
 
 Running the application will display a view where tapping or dragging generates water ripples.
 
+## Splashing Water
+
+The enhanced ripple controller now tracks velocity for each point on the water surface.
+Touches inject momentum into the velocity maps so quick taps create splash-like effects.
+A small particle sprite (`Resources/Particles.png`) is drawn whenever the velocity is
+high enough, giving visual feedback of splashing water.
+
