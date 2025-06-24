@@ -1,26 +1,26 @@
 # WaterEffect
 
-WaterEffect is a simple iOS sample that demonstrates a dynamic water ripple effect. It is written in C# using Xamarin.iOS. The sample includes an `EnhancedRippleViewController` that renders ripples with SkiaSharp and an `OpenGLWaterEffectViewController` that renders a basic effect with OpenGL.
+WaterEffect is a simple iOS sample that demonstrates a dynamic water ripple effect. Originally written in C# using Xamarin.iOS, the repository now also contains a Swift implementation that can be opened directly in Xcode.
 
 ## Prerequisites
 
-- macOS with [Xamarin.iOS](https://learn.microsoft.com/xamarin/ios/) installed. The easiest way to get started is using **Visual Studio for Mac** or **Visual Studio** on Windows paired with a Mac build host.
+- Xcode 13 or newer.
 - An iOS device or simulator to run the application.
 
-## Building and Running
+## Building and Running (Swift Version)
 
-1. Clone this repository.
-2. Open `WaterEffect.sln` in Visual Studio.
-3. Restore NuGet packages if prompted.
-4. Build the `WaterEffect` project.
-5. Deploy to an iOS simulator or a connected device.
+1. Navigate to the `WaterEffectSwift` folder.
+2. Run `swift package generate-xcodeproj` to create the Xcode project files.
+3. Open the generated `WaterEffectSwift.xcodeproj` in Xcode.
+4. Build and run the app on a simulator or device.
 
-Running the application will display a view where tapping or dragging generates water ripples.
+The Swift version replicates the ripple effect using `UIKit` without external dependencies.
 
-## Splashing Water
+## Building and Running (Original Xamarin Version)
 
-The enhanced ripple controller now tracks velocity for each point on the water surface.
-Touches inject momentum into the velocity maps so quick taps create splash-like effects.
-A small particle sprite (`Resources/Particles.png`) is drawn whenever the velocity is
-high enough, giving visual feedback of splashing water.
+1. Open `WaterEffect.sln` in Visual Studio.
+2. Restore NuGet packages if prompted.
+3. Build the `WaterEffect` project.
+4. Deploy to an iOS simulator or a connected device.
 
+Running either version will display a view where tapping or dragging generates water ripples.
