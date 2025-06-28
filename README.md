@@ -10,9 +10,8 @@ WaterEffect is a simple iOS sample that demonstrates a dynamic water ripple effe
 ## Building and Running (Swift Version)
 
 1. Navigate to the `WaterEffectSwift` folder.
-2. Run `swift package generate-xcodeproj` to create the Xcode project files.
-3. Open the generated `WaterEffectSwift.xcodeproj` in Xcode.
-4. Build and run the app on a simulator or device.
+2. Open `Package.swift` in Xcode (for example by running `open Package.swift`).
+3. Build and run the app on a simulator or device.
 
 The Swift version replicates the ripple effect using `UIKit` without external dependencies.
 
